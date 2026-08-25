@@ -1,0 +1,18 @@
+From: security-alert@example.com
+To: victim@example.com
+Subject: Urgent Account Verification Required
+Date: Mon, 24 Aug 2026 10:30:00 +0530
+MIME-Version: 1.0
+Content-Type: text/plain; charset="UTF-8"
+
+URGENT: Your account will be suspended.
+
+We detected unusual activity on your account.
+Please verify your account immediately by clicking the link below:
+
+http://example.com/verify-account
+
+Failure to verify your account within 24 hours will result in permanent suspension.
+
+Thank you,
+Security Team

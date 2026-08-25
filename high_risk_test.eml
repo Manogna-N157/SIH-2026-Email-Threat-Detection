@@ -1,0 +1,29 @@
+From Microsoft Security security-alert@micros0ft-support.com
+To employee@example.com
+Subject URGENT Your Microsoft 365 Account Will Be Suspended Today
+Date Tue, 25 Aug 2026 203000 +0530
+Content-Type textplain; charset=UTF-8
+
+URGENT SECURITY ALERT
+
+We detected unusual sign-in activity on your Microsoft 365 account from an
+unknown device in another country.
+
+For your protection, your account will be permanently suspended within 2 hours
+unless you verify your identity immediately.
+
+Click the link below to secure your account
+
+httpmicrosoft-account-security-verification.example.comlogin
+
+You must provide
+- Microsoft 365 email address
+- Password
+- Phone number
+- One-time verification code
+
+Failure to complete verification will result in permanent account suspension
+and loss of access to your emails and files.
+
+Microsoft Security Team
+Account Protection Department

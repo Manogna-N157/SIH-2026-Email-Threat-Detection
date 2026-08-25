@@ -1,0 +1,9 @@
+From: Newsletter <news@example.com>
+To: user@company.test
+Subject: Monthly update
+Authentication-Results: mx.company.test; spf=pass; dkim=pass; dmarc=pass
+Received: from outbound.example.com (outbound.example.com [203.0.113.20]) by mx.example.com with ESMTP; Mon, 24 Aug 2026 09:00:00 +0000
+Received: from origin.example.com (origin.example.com [198.51.100.20]) by outbound.example.com with ESMTP; Mon, 24 Aug 2026 08:00:00 +0000
+Content-Type: text/plain; charset=utf-8
+
+Thank you for reading our monthly update. Visit https://example.com/news.

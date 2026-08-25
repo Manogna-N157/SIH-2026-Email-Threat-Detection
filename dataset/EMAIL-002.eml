@@ -1,0 +1,9 @@
+From: Account Security <alerts@example.com>
+To: user@company.test
+Reply-To: verify@secure-login-888.example
+Return-Path: <bounce@mailer.example>
+Subject: Urgent: verify your account
+Authentication-Results: mx.company.test; spf=fail; dkim=fail; dmarc=fail
+Content-Type: text/plain; charset=utf-8
+
+Your account will be suspended. Verify your password immediately at http://secure-login-888.example/login.

@@ -1,0 +1,18 @@
+From: Documents <files@example.com>
+To: user@company.test
+Subject: Documents for review
+Authentication-Results: mx.company.test; spf=pass; dkim=pass; dmarc=pass
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="email008"
+
+--email008
+Content-Type: text/plain; charset=utf-8
+
+Please review the attached document.
+--email008
+Content-Type: application/octet-stream
+Content-Disposition: attachment; filename="invoice.pdf.exe"
+Content-Transfer-Encoding: base64
+
+TVqQAAMAAAAEAAAA
+--email008--

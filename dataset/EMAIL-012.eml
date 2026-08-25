@@ -1,0 +1,7 @@
+From: IT Helpdesk <support@account-verify-777.example>
+To: user@company.test
+Subject: Action required within 2 hours
+Authentication-Results: mx.company.test; spf=softfail; dkim=pass; dmarc=fail
+Content-Type: text/plain; charset=utf-8
+
+Action required: confirm your login credentials within 2 hours at http://account-verify-777.example/portal.

@@ -1,0 +1,8 @@
+From: CEO <ceo@outside.example>
+To: finance@company.test
+Reply-To: payments@wire-transfer-999.example
+Subject: Urgent confidential payment
+Authentication-Results: mx.company.test; spf=pass; dkim=pass; dmarc=pass
+Content-Type: text/plain; charset=utf-8
+
+Please keep this confidential. Arrange a wire transfer immediately and send the bank details for the beneficiary. Do not call me.
