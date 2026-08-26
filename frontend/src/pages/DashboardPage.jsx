@@ -1,73 +1,145 @@
 import React, { useEffect, useState } from 'react';
-import { getCases } from '../api';
+import {
+  Mail,
+  AlertTriangle,
+  ShieldCheck,
+  ArrowRight,
+  RefreshCw,
+} from 'lucide-react';
 import Badge from '../components/Badge';
-import { Mail, AlertTriangle, ShieldCheck, ArrowRight, RefreshCw } from 'lucide-react';
 
-export default function DashboardPage({ navigateToInvestigate, onSelectCase }) {
-  const [cases, setCases] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+const demoCases = [
+  {
+    case_id: 'CASE-001',
+    filename: 'invoice_payment.eml',
+    risk_score: 92,
+    risk_level: 'CRITICAL',
+    classification: 'PHISHING',
+    confidence: 96,
+    timestamp: '2026-08-26T10:32:00',
+  },
+  {
+    case_id: 'CASE-002',
+    filename: 'account_verification.eml',
+    risk_score: 78,
+    risk_level: 'HIGH',
+    classification: 'MALICIOUS',
+    confidence: 91,
+    timestamp: '2026-08-26T09:48:00',
+  },
+  {
+    case_id: 'CASE-003',
+    filename: 'meeting_invitation.eml',
+    risk_score: 34,
+    risk_level: 'LOW',
+    classification: 'SUSPICIOUS',
+    confidence: 82,
+    timestamp: '2026-08-26T09:15:00',
+  },
+  {
+    case_id: 'CASE-004',
+    filename: 'hr_document.eml',
+    risk_score: 12,
+    risk_level: 'LOW',
+    classification: 'LEGITIMATE',
+    confidence: 98,
+    timestamp: '2026-08-26T08:42:00',
+  },
+  {
+    case_id: 'CASE-005',
+    filename: 'password_reset.eml',
+    risk_score: 86,
+    risk_level: 'HIGH',
+    classification: 'PHISHING',
+    confidence: 94,
+    timestamp: '2026-08-26T08:10:00',
+  },
+];
 
-  const fetchDashboardData = async () => {
+export default function DashboardPage({
+  navigateToInvestigate,
+  onSelectCase,
+}) {
+  const [cases, setCases] = useState(demoCases);
+  const [loading, setLoading] = useState(false);
+
+  const fetchDashboardData = () => {
+    // Frontend-only demo mode.
+    // Backend integration can be restored later.
     setLoading(true);
-    setError('');
-    try {
-      const data = await getCases();
-      setCases(data || []);
-    } catch (err) {
-      console.warn('Dashboard cases fetch notice:', err.message);
-      setError('Could not fetch stored cases from backend. (Is FastAPI backend running?)');
-    } finally {
+
+    setTimeout(() => {
+      setCases(demoCases);
       setLoading(false);
-    }
+    }, 400);
   };
 
   useEffect(() => {
-    fetchDashboardData();
+    setCases(demoCases);
   }, []);
 
-  // Compute metric numbers strictly following data rules:
   const totalAnalyzed = cases.length;
-  
-  // High Risk Cases MUST be calculated strictly from the backend's risk_level
-  // (risk_level === 'HIGH' or 'CRITICAL', case-insensitive), NOT from classification or risk_score.
-  const highRiskCount = cases.filter(c => {
-    const rawLevel = c.risk_level || c.analysis?.risk_level;
-    if (!rawLevel) return false;
-    const upper = String(rawLevel).trim().toUpperCase();
-    return upper === 'HIGH' || upper === 'CRITICAL';
+
+  const highRiskCount = cases.filter((c) => {
+    const level = String(c.risk_level || '').toUpperCase();
+    return level === 'HIGH' || level === 'CRITICAL';
   }).length;
 
-  const threatsDetected = cases.filter(c => (c.indicators || []).length > 0 || (c.classification && c.classification !== 'LEGITIMATE')).length;
+  const threatsDetected = cases.filter(
+    (c) =>
+      c.classification &&
+      c.classification.toUpperCase() !== 'LEGITIMATE'
+  ).length;
 
-  const formatConfidence = (val) => {
-    if (val === null || val === undefined || val === '') return 'N/A';
-    return `${val}%`;
+  const formatConfidence = (value) => {
+    if (value === null || value === undefined) return 'N/A';
+    return `${value}%`;
   };
 
   return (
     <div className="page-container">
-      {/* Overview Banner */}
+
+      {/* Hero Banner */}
       <div className="card overview-banner">
-        <h2>AI-Powered Email Threat Detection, GeoLocation and Forensic Intelligence Platform</h2>
-        <p>
-          Comprehensive analysis platform for inspecting .eml headers, verifying SPF/DKIM/DMARC authentication, 
-          detecting threat vectors, mapping probable infrastructure locations, and building graph intelligence.
-        </p>
-        <button className="btn btn-primary" onClick={navigateToInvestigate}>
-          <Mail size={16} /> Investigate New .EML File
-        </button>
+        <div>
+          <h2>
+            AI-Powered Email Threat Detection, GeoLocation and
+            Forensic Intelligence Platform
+          </h2>
+
+          <p>
+            Comprehensive analysis platform for inspecting .eml headers,
+            verifying SPF/DKIM/DMARC authentication, detecting threat
+            vectors, mapping probable infrastructure locations, and
+            building graph intelligence.
+          </p>
+
+          <button
+            className="btn btn-primary"
+            onClick={navigateToInvestigate}
+          >
+            <Mail size={16} />
+            Investigate New .EML File
+          </button>
+        </div>
       </div>
 
-      {/* Metrics Cards */}
+      {/* Dashboard Metrics */}
       <div className="metrics-grid">
+
         <div className="card metric-card">
           <div className="metric-icon blue">
             <Mail size={24} />
           </div>
+
           <div className="metric-info">
-            <span className="metric-label">Emails Analyzed</span>
-            <span className="metric-value">{loading ? '...' : totalAnalyzed}</span>
+            <span className="metric-label">
+              Emails Analyzed
+            </span>
+
+            <span className="metric-value">
+              {loading ? '...' : totalAnalyzed}
+            </span>
           </div>
         </div>
 
@@ -75,9 +147,15 @@ export default function DashboardPage({ navigateToInvestigate, onSelectCase }) {
           <div className="metric-icon red">
             <AlertTriangle size={24} />
           </div>
+
           <div className="metric-info">
-            <span className="metric-label">High Risk Cases</span>
-            <span className="metric-value">{loading ? '...' : highRiskCount}</span>
+            <span className="metric-label">
+              High Risk Cases
+            </span>
+
+            <span className="metric-value">
+              {loading ? '...' : highRiskCount}
+            </span>
           </div>
         </div>
 
@@ -85,78 +163,129 @@ export default function DashboardPage({ navigateToInvestigate, onSelectCase }) {
           <div className="metric-icon orange">
             <ShieldCheck size={24} />
           </div>
+
           <div className="metric-info">
-            <span className="metric-label">Threats Detected</span>
-            <span className="metric-value">{loading ? '...' : threatsDetected}</span>
+            <span className="metric-label">
+              Threats Detected
+            </span>
+
+            <span className="metric-value">
+              {loading ? '...' : threatsDetected}
+            </span>
           </div>
         </div>
+
       </div>
 
-      {/* Recent Cases Section */}
+      {/* Recent Cases */}
       <div className="card">
+
         <div className="card-header">
-          <h3>Recent Cases</h3>
-          <button className="btn btn-secondary btn-sm" onClick={fetchDashboardData}>
-            <RefreshCw size={14} /> Refresh
+          <div>
+            <h3>Recent Investigative Cases</h3>
+            <p className="subtitle">
+              Latest email forensic investigations
+            </p>
+          </div>
+
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={fetchDashboardData}
+          >
+            <RefreshCw size={14} />
+            Refresh
           </button>
         </div>
 
-        {error && <div className="alert alert-warning">{error}</div>}
-
         {loading ? (
-          <p className="loading-text">Loading recent cases...</p>
-        ) : cases.length === 0 ? (
-          <div className="empty-state">
-            <p>No cases analyzed yet. Start by uploading an .eml file on the Investigate page.</p>
-            <button className="btn btn-primary" onClick={navigateToInvestigate}>
-              Go to Investigate Email
-            </button>
-          </div>
+          <p className="loading-text">
+            Loading recent cases...
+          </p>
         ) : (
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Case ID</th>
-                <th>Filename / Subject</th>
-                <th>Risk Score</th>
-                <th>Risk Level</th>
-                <th>Classification</th>
-                <th>Confidence</th>
-                <th>Date</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {cases.slice(0, 5).map(c => {
-                const riskLevel = c.risk_level || c.analysis?.risk_level;
-                const confVal = c.confidence ?? c.analysis?.confidence;
-                return (
+          <div className="table-container">
+            <table className="data-table">
+
+              <thead>
+                <tr>
+                  <th>Case ID</th>
+                  <th>Filename / Subject</th>
+                  <th>Risk Score</th>
+                  <th>Risk Level</th>
+                  <th>Classification</th>
+                  <th>Confidence</th>
+                  <th>Date</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {cases.slice(0, 5).map((c) => (
                   <tr key={c.case_id}>
-                    <td><code>{c.case_id}</code></td>
-                    <td>{c.filename || c.summary || 'Email Analysis'}</td>
+
                     <td>
-                      <span className={`risk-score-pill score-${c.risk_score >= 70 ? 'high' : c.risk_score >= 40 ? 'med' : 'low'}`}>
-                        {c.risk_score ?? 'N/A'}/100
+                      <code>{c.case_id}</code>
+                    </td>
+
+                    <td>
+                      {c.filename}
+                    </td>
+
+                    <td>
+                      <span
+                        className={`risk-score-pill score-${
+                          c.risk_score >= 70
+                            ? 'high'
+                            : c.risk_score >= 40
+                            ? 'med'
+                            : 'low'
+                        }`}
+                      >
+                        {c.risk_score}/100
                       </span>
                     </td>
+
                     <td>
-                      {riskLevel ? <Badge type="risk_level" value={riskLevel} /> : <span className="text-muted">N/A</span>}
+                      <Badge
+                        type="risk_level"
+                        value={c.risk_level}
+                      />
                     </td>
-                    <td><Badge type="classification" value={c.classification} /></td>
-                    <td>{formatConfidence(confVal)}</td>
-                    <td>{c.timestamp ? new Date(c.timestamp).toLocaleString() : 'N/A'}</td>
+
                     <td>
-                      <button className="btn btn-secondary btn-sm" onClick={() => onSelectCase(c)}>
-                        View <ArrowRight size={12} />
+                      <Badge
+                        type="classification"
+                        value={c.classification}
+                      />
+                    </td>
+
+                    <td>
+                      {formatConfidence(c.confidence)}
+                    </td>
+
+                    <td>
+                      {new Date(c.timestamp).toLocaleString()}
+                    </td>
+
+                    <td>
+                      <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => onSelectCase(c)}
+                      >
+                        View
+                        <ArrowRight size={12} />
                       </button>
                     </td>
+
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                ))}
+              </tbody>
+
+            </table>
+          </div>
         )}
+
       </div>
+
     </div>
   );
 }
