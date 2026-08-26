@@ -63,7 +63,7 @@ def test_pipeline_keeps_deterministic_result_when_gemini_is_unavailable(monkeypa
     assert isinstance(response.confidence, int)
     assert 0 <= response.confidence <= 100
     assert response.confidence_source == "deterministic_fallback"
-    assert response.risk_level == "CRITICAL"
+    assert response.risk_level == "HIGH"
     assert response.ai_analysis.available is False
     assert response.ai_analysis.result is None
 

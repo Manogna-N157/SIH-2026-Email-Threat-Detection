@@ -144,6 +144,10 @@ def _all_header_values(message: EmailMessage, name: str) -> list[str]:
     return [str(value) for value in message.get_all(name, [])]
 
 
+def _raw_header_values(message: EmailMessage, name: str) -> list[str]:
+    return [str(value) for header_name, value in message.raw_items() if header_name.lower() == name.lower()]
+
+
 def _first_header_value(message: EmailMessage, name: str) -> str | None:
     values = _all_header_values(message, name)
     return values[0] if values else None
@@ -151,11 +155,13 @@ def _first_header_value(message: EmailMessage, name: str) -> str | None:
 
 def _addresses(message: EmailMessage, name: str) -> list[EmailAddress]:
     addresses: list[EmailAddress] = []
-    for header in message.get_all(name, []):
+    raw_values = _raw_header_values(message, name)
+    for index, header in enumerate(message.get_all(name, [])):
+        raw_value = raw_values[index] if index < len(raw_values) else str(header)
         parsed_addresses: Iterable[Address] = getattr(header, "addresses", ())
-        malformed_addresses = [address for address in parsed_addresses if " " in (address.addr_spec or "")]
-        if malformed_addresses:
-            recovered = _recover_embedded_addresses(str(header))
+        embedded_matches = list(EMAIL_ADDRESS_PATTERN.finditer(raw_value))
+        if "<" not in raw_value and len(embedded_matches) == 1:
+            recovered = _recover_embedded_addresses(raw_value)
             if recovered:
                 addresses.extend(recovered)
                 continue
@@ -169,7 +175,7 @@ def _addresses(message: EmailMessage, name: str) -> list[EmailAddress]:
             )
         if not parsed_addresses:
             # Return-Path and malformed address headers are often unstructured.
-            for display_name, addr_spec in getaddresses([str(header)]):
+            for display_name, addr_spec in getaddresses([raw_value]):
                 local_part, separator, domain = addr_spec.rpartition("@")
                 addresses.append(
                     EmailAddress(

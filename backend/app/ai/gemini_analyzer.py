@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 from pathlib import Path
 from typing import Any
@@ -11,8 +12,10 @@ from dotenv import load_dotenv
 
 from app.schemas import GeminiAnalysis, ParsedEmail, RiskAssessment
 
+logger = logging.getLogger(__name__)
 
-MODEL_NAME = "gemini-2.5-flash"
+
+MODEL_NAME = "gemini-3.6-flash"
 TIMEOUT_MS = 15_000
 ENV_FILE = Path(__file__).resolve().parents[2] / ".env"
 
@@ -40,9 +43,10 @@ def analyze_with_gemini(
             config=_generation_config(),
         )
         return _parse_response(response)
-    except Exception:
+    except Exception as exc:
         # Covers timeout, rate-limit, SDK/network, and invalid-response failures.
-        # Do not log request content or credentials from this security-sensitive path.
+        # Log the error class/message for diagnostics; never log request content or credentials.
+        logger.warning("Gemini analysis unavailable: %s: %s", type(exc).__name__, exc)
         return None
 
 

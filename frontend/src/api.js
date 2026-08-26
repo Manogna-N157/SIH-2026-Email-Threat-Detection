@@ -277,3 +277,35 @@ export async function deleteAllCases() {
 export function getPdfReportUrl(caseId) {
   return `${BASE_URL}/api/reports/${encodeURIComponent(caseId)}/pdf`;
 }
+
+/**
+ * Verify blockchain evidence integrity for a case via GET /api/cases/{caseId}/blockchain/verify
+ */
+export async function verifyCaseBlockchain(caseId) {
+  try {
+    const response = await fetch(`${BASE_URL}/api/cases/${encodeURIComponent(caseId)}/blockchain/verify`);
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || `Blockchain verification failed (${response.status})`);
+    }
+    return await response.json();
+  } catch (err) {
+    throw err;
+  }
+}
+
+/**
+ * Fetch full blockchain evidence ledger via GET /api/blockchain
+ */
+export async function getBlockchainLedger() {
+  try {
+    const response = await fetch(`${BASE_URL}/api/blockchain`);
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || `Failed to fetch blockchain ledger (${response.status})`);
+    }
+    return await response.json();
+  } catch (err) {
+    throw err;
+  }
+}

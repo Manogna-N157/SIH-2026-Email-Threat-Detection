@@ -16,3 +16,13 @@ dist/
 
 .DS_Store
 Thumbs.db
+
+# Kaggle dataset - local testing only
+dataset/phishing and benign email dataset.jsonl
+
+# Generated EML files from Kaggle testing
+dataset/test_email_*.eml
+
+# Python cache
+__pycache__/
+*.pyc

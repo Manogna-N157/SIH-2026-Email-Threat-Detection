@@ -50,7 +50,8 @@ export default function Badge({ type, value }) {
       case 'MEDIUM':
         bg = '#fef3c7'; color = '#92400e'; break;
       case 'LOW':
-        bg = '#e0f2fe'; color = '#0369a1'; break;
+        bg = '#dcfce7'; color = '#15803d'; break;
+
       default:
         bg = '#f1f5f9'; color = '#475569';
     }

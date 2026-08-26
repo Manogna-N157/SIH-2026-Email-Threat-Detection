@@ -67,7 +67,7 @@ export default function ReportsPage() {
                   <td><code>{c.case_id}</code></td>
                   <td>{c.filename || c.summary || 'Email Forensic Investigation'}</td>
                   <td>
-                    <span className={`risk-score-pill score-${c.risk_score >= 70 ? 'high' : c.risk_score >= 40 ? 'med' : 'low'}`}>
+                    <span className={`risk-score-pill score-${c.risk_score >= 75 ? 'high' : c.risk_score >= 50 ? 'med' : 'low'}`}>
                       {c.risk_score}/100
                     </span>
                   </td>

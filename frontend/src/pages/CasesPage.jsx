@@ -3,8 +3,10 @@ import { getCases, getCaseDetails, getPdfReportUrl, deleteCase, deleteAllCases }
 import Badge from '../components/Badge';
 import ThreatGraphView from '../components/ThreatGraphView';
 import GeoMap from '../components/GeoMap';
+import AISemanticAnalysisView from '../components/AISemanticAnalysisView';
+import BlockchainLedgerView from '../components/BlockchainLedgerView';
 
-import { Briefcase, RefreshCw, Eye, Download, X, AlertCircle, Trash2, CheckCircle2 } from 'lucide-react';
+import { Briefcase, RefreshCw, Eye, Download, X, AlertCircle, Trash2, CheckCircle2, ShieldCheck, Mail, Network, Clock, ListChecks } from 'lucide-react';
 
 export default function CasesPage({ selectedCaseFromNav }) {
   const [cases, setCases] = useState([]);
@@ -49,7 +51,11 @@ export default function CasesPage({ selectedCaseFromNav }) {
       const details = await getCaseDetails(caseId);
       setActiveCaseDetail(details);
     } catch (err) {
-      setFeedback({ type: 'error', message: `Could not load details for case ${caseId}: ${err.message}` });
+      if (err.message && err.message.includes('404')) {
+        setFeedback({ type: 'error', message: `Case ${caseId} was not found. It may have been deleted.` });
+      } else {
+        setFeedback({ type: 'error', message: `Could not load details for case ${caseId}: ${err.message}` });
+      }
     } finally {
       setLoadingDetail(false);
     }
@@ -65,14 +71,12 @@ export default function CasesPage({ selectedCaseFromNav }) {
     try {
       await deleteCase(caseId);
       setFeedback({ type: 'success', message: `Case ${caseId} was deleted successfully.` });
-      // Optimistically update list or refresh
       setCases((prev) => prev.filter((c) => c.case_id !== caseId));
       if (activeCaseDetail?.case_id === caseId) {
         setActiveCaseDetail(null);
       }
       await fetchCases();
     } catch (err) {
-      // Fallback: update client state if backend endpoint not available
       setCases((prev) => prev.filter((c) => c.case_id !== caseId));
       setFeedback({ type: 'success', message: `Case ${caseId} deleted.` });
     } finally {
@@ -94,7 +98,6 @@ export default function CasesPage({ selectedCaseFromNav }) {
       setCases([]);
       setActiveCaseDetail(null);
     } catch (err) {
-      // Fallback: clear local list
       setCases([]);
       setFeedback({ type: 'success', message: 'All cases cleared from view.' });
     } finally {
@@ -166,7 +169,7 @@ export default function CasesPage({ selectedCaseFromNav }) {
                     <td><code>{c.case_id}</code></td>
                     <td>{c.timestamp ? new Date(c.timestamp).toLocaleString() : 'N/A'}</td>
                     <td>
-                      <span className={`risk-score-pill score-${c.risk_score >= 70 ? 'high' : c.risk_score >= 40 ? 'med' : 'low'}`}>
+                      <span className={`risk-score-pill score-${c.risk_score >= 75 ? 'high' : c.risk_score >= 50 ? 'med' : 'low'}`}>
                         {c.risk_score ?? 'N/A'}/100
                       </span>
                     </td>
@@ -209,82 +212,241 @@ export default function CasesPage({ selectedCaseFromNav }) {
         )}
       </div>
 
-      {/* Case Details Modal / Full Inspection Box */}
+      {/* Case Details Modal / Full Structured Forensic Inspection Box */}
       {activeCaseDetail && (
         <div className="modal-backdrop" onClick={() => setActiveCaseDetail(null)}>
-          <div className="modal-content card" onClick={(e) => e.stopPropagation()}>
-            <div className="card-header">
-              <h3>Case Details: <code>{activeCaseDetail.case_id}</code></h3>
+          <div className="modal-content card" style={{ maxWidth: '900px', maxHeight: '90vh', overflowY: 'auto' }} onClick={(e) => e.stopPropagation()}>
+            <div className="card-header" style={{ position: 'sticky', top: 0, background: '#ffffff', zIndex: 10, borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
+              <div>
+                <h3 style={{ margin: 0 }}>Forensic Case Details: <code>{activeCaseDetail.case_id}</code></h3>
+                <span style={{ fontSize: '12px', color: '#64748b' }}>Filename: {activeCaseDetail.filename}</span>
+              </div>
               <button className="btn-icon" onClick={() => setActiveCaseDetail(null)}>
-                <X size={18} />
+                <X size={20} />
               </button>
             </div>
 
             {loadingDetail ? (
               <p className="loading-text">Loading detail view...</p>
             ) : (
-              <div className="modal-body">
-                <div className="details-grid" style={{ marginBottom: '16px' }}>
-                  <div className="detail-row">
-                    <strong>Filename:</strong> <span>{activeCaseDetail.filename}</span>
-                  </div>
-                  <div className="detail-row">
-                    <strong>Timestamp:</strong> <span>{activeCaseDetail.timestamp}</span>
-                  </div>
-                  <div className="detail-row">
-                    <strong>Risk Score:</strong> 
-                    <span>
-                      {activeCaseDetail.risk_score ?? 'N/A'}/100
-                    </span>
-                  </div>
-                  <div className="detail-row">
-                    <strong>Risk Level:</strong> 
-                    <Badge type="risk_level" value={activeCaseDetail.risk_level || activeCaseDetail.analysis?.risk_level} />
-                  </div>
-                  <div className="detail-row">
-                    <strong>Classification:</strong> <Badge type="classification" value={activeCaseDetail.classification} />
-                  </div>
-                  <div className="detail-row">
-                    <strong>Confidence:</strong> <span>{formatConfidence(activeCaseDetail.confidence ?? activeCaseDetail.analysis?.confidence)}</span>
-                  </div>
-                  <div className="detail-row">
-                    <strong>Summary:</strong> <span>{activeCaseDetail.summary}</span>
+              <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '16px', paddingTop: '16px' }}>
+                {/* 1. CASE OVERVIEW */}
+                <div className="card" style={{ background: '#f8fafc', padding: '14px', border: '1px solid #e2e8f0' }}>
+                  <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#0f172a' }}>1. Case Overview</h4>
+                  <div className="details-grid">
+                    <div className="detail-row"><strong>Case ID:</strong> <code>{activeCaseDetail.case_id}</code></div>
+                    <div className="detail-row"><strong>Filename:</strong> <span>{activeCaseDetail.filename}</span></div>
+                    <div className="detail-row"><strong>Timestamp:</strong> <span>{activeCaseDetail.timestamp ? new Date(activeCaseDetail.timestamp).toLocaleString() : 'N/A'}</span></div>
+                    <div className="detail-row"><strong>Summary:</strong> <span>{activeCaseDetail.summary}</span></div>
                   </div>
                 </div>
 
-                {activeCaseDetail.analysis && (
-                  <div>
-                    <h4 style={{ margin: '12px 0 8px 0' }}>Threat Indicators ({activeCaseDetail.analysis.indicators?.length || 0}):</h4>
-                    {activeCaseDetail.analysis.indicators?.length > 0 ? (
-                      <ul>
-                        {activeCaseDetail.analysis.indicators.map((ind, i) => (
-                          <li key={i}>
-                            <strong>{ind.name}</strong> ({ind.severity}): {ind.explanation}
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="text-muted">None</p>
-                    )}
+                {/* 2. RISK / THREAT SUMMARY */}
+                <div className="card" style={{ background: '#ffffff', padding: '14px', border: '1px solid #e2e8f0' }}>
+                  <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#0f172a' }}>2. Risk & Threat Summary</h4>
+                  <div className="details-grid">
+                    <div className="detail-row">
+                      <strong>Risk Score:</strong> 
+                      <span className={`risk-score-pill score-${activeCaseDetail.risk_score >= 75 ? 'high' : activeCaseDetail.risk_score >= 50 ? 'med' : 'low'}`}>
+                        {activeCaseDetail.risk_score ?? 'N/A'}/100
+                      </span>
+                    </div>
+                    <div className="detail-row">
+                      <strong>Risk Level:</strong> 
+                      <Badge type="risk_level" value={activeCaseDetail.risk_level || activeCaseDetail.analysis?.risk_level} />
+                    </div>
+                    <div className="detail-row">
+                      <strong>Classification:</strong> 
+                      <Badge type="classification" value={activeCaseDetail.classification} />
+                    </div>
+                    <div className="detail-row">
+                      <strong>Confidence:</strong> 
+                      <span>{formatConfidence(activeCaseDetail.confidence ?? activeCaseDetail.analysis?.confidence)}</span>
+                    </div>
+                  </div>
+                </div>
 
-                    <h4 style={{ margin: '16px 0 8px 0' }}>Relational Threat Graph:</h4>
+                {/* 3. AI SEMANTIC ANALYSIS */}
+                <AISemanticAnalysisView 
+                  analysisData={activeCaseDetail.analysis} 
+                  classification={activeCaseDetail.classification}
+                  confidence={activeCaseDetail.confidence ?? activeCaseDetail.analysis?.confidence}
+                  fallbackText="AI semantic analysis unavailable for this case."
+                />
+
+                {/* 4. EMAIL METADATA */}
+                {activeCaseDetail.analysis?.email && (
+                  <div className="card" style={{ background: '#ffffff', padding: '14px', border: '1px solid #e2e8f0' }}>
+                    <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Mail size={16} /> 4. Email Header Metadata
+                    </h4>
+                    <div className="details-grid">
+                      <div className="detail-row">
+                        <strong>From:</strong> <span>{activeCaseDetail.analysis.email.from_?.map(a => `${a.display_name || ''} <${a.address || ''}>`).join(', ') || 'N/A'}</span>
+                      </div>
+                      <div className="detail-row">
+                        <strong>To:</strong> <span>{activeCaseDetail.analysis.email.to?.map(a => `${a.display_name || ''} <${a.address || ''}>`).join(', ') || 'N/A'}</span>
+                      </div>
+                      <div className="detail-row">
+                        <strong>Subject:</strong> <span>{activeCaseDetail.analysis.email.subject || 'No Subject'}</span>
+                      </div>
+                      <div className="detail-row">
+                        <strong>Date:</strong> <span>{activeCaseDetail.analysis.email.date || 'N/A'}</span>
+                      </div>
+                      <div className="detail-row">
+                        <strong>Message-ID:</strong> <code>{activeCaseDetail.analysis.email.message_id || 'N/A'}</code>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 5. AUTHENTICATION RESULTS */}
+                {activeCaseDetail.analysis?.authentication && (
+                  <div className="card" style={{ background: '#ffffff', padding: '14px', border: '1px solid #e2e8f0' }}>
+                    <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <ShieldCheck size={16} /> 5. Authentication Checks (SPF / DKIM / DMARC)
+                    </h4>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                      <div style={{ background: '#f8fafc', padding: '8px 12px', borderRadius: '6px' }}>
+                        <strong>SPF:</strong> <Badge type="result" value={activeCaseDetail.analysis.authentication.spf?.[0]?.result || 'NONE'} />
+                      </div>
+                      <div style={{ background: '#f8fafc', padding: '8px 12px', borderRadius: '6px' }}>
+                        <strong>DKIM:</strong> <Badge type="result" value={activeCaseDetail.analysis.authentication.dkim?.[0]?.result || 'NONE'} />
+                      </div>
+                      <div style={{ background: '#f8fafc', padding: '8px 12px', borderRadius: '6px' }}>
+                        <strong>DMARC:</strong> <Badge type="result" value={activeCaseDetail.analysis.authentication.dmarc?.[0]?.result || 'NONE'} />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 6. SECURITY INDICATORS */}
+                <div className="card" style={{ background: '#ffffff', padding: '14px', border: '1px solid #e2e8f0' }}>
+                  <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <ListChecks size={16} /> 6. Security Indicators ({activeCaseDetail.indicators?.length || 0})
+                  </h4>
+                  {activeCaseDetail.indicators?.length > 0 ? (
+                    <table className="data-table" style={{ fontSize: '12px' }}>
+                      <thead>
+                        <tr>
+                          <th>Indicator Name</th>
+                          <th>Severity</th>
+                          <th>Score Contribution</th>
+                          <th>Explanation</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {activeCaseDetail.indicators.map((ind, idx) => (
+                          <tr key={idx}>
+                            <td><strong>{ind.name}</strong></td>
+                            <td><Badge type="severity" value={ind.severity} /></td>
+                            <td>+{ind.score_contribution}</td>
+                            <td>{ind.explanation}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <p className="text-muted" style={{ margin: 0, fontSize: '13px' }}>No security indicators triggered.</p>
+                  )}
+                </div>
+
+                {/* 7. NETWORK ARTIFACTS (URLs / DOMAINS / IPs) */}
+                {activeCaseDetail.analysis && (
+                  <div className="card" style={{ background: '#ffffff', padding: '14px', border: '1px solid #e2e8f0' }}>
+                    <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Network size={16} /> 7. Network Artifacts (URLs / Domains / IPs)
+                    </h4>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', fontSize: '12px' }}>
+                      <div>
+                        <strong>Extracted URLs ({activeCaseDetail.analysis.urls?.length || 0}):</strong>
+                        {activeCaseDetail.analysis.urls?.length > 0 ? (
+                          <ul style={{ margin: '4px 0 0 16px', padding: 0 }}>
+                            {activeCaseDetail.analysis.urls.map((u, i) => <li key={i}><code>{u}</code></li>)}
+                          </ul>
+                        ) : <div className="text-muted">None</div>}
+                      </div>
+
+                      <div>
+                        <strong>Observed Domains ({activeCaseDetail.analysis.domains?.length || 0}):</strong>
+                        {activeCaseDetail.analysis.domains?.length > 0 ? (
+                          <ul style={{ margin: '4px 0 0 16px', padding: 0 }}>
+                            {activeCaseDetail.analysis.domains.map((d, i) => <li key={i}><code>{d}</code></li>)}
+                          </ul>
+                        ) : <div className="text-muted">None</div>}
+                      </div>
+
+                      <div>
+                        <strong>IPv4 Addresses ({activeCaseDetail.analysis.ips?.length || 0}):</strong>
+                        {activeCaseDetail.analysis.ips?.length > 0 ? (
+                          <ul style={{ margin: '4px 0 0 16px', padding: 0 }}>
+                            {activeCaseDetail.analysis.ips.map((ip, i) => <li key={i}><code>{ip}</code></li>)}
+                          </ul>
+                        ) : <div className="text-muted">None</div>}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 8. INFRASTRUCTURE GEOLOCATION + MAP */}
+                <GeoMap 
+                  locationData={activeCaseDetail.analysis?.ip_intelligence?.find(i => i.probable_infrastructure_location)?.probable_infrastructure_location || activeCaseDetail.analysis?.ip_intelligence?.[0]?.probable_infrastructure_location}
+                  title="8. Infrastructure GeoLocation Map"
+                />
+
+                {/* 9. THREAT GRAPH */}
+                {activeCaseDetail.analysis?.threat_graph && (
+                  <div className="card" style={{ background: '#ffffff', padding: '14px', border: '1px solid #e2e8f0' }}>
+                    <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#0f172a' }}>9. Relational Threat Graph</h4>
                     <ThreatGraphView 
                       threatGraph={activeCaseDetail.analysis.threat_graph}
                       email={activeCaseDetail.analysis.email}
                       ips={activeCaseDetail.analysis.ips}
                       ipIntelligence={activeCaseDetail.analysis.ip_intelligence}
                     />
-
-                    <h4 style={{ margin: '16px 0 8px 0' }}>Infrastructure GeoLocation Map:</h4>
-                    <GeoMap 
-                      locationData={activeCaseDetail.analysis.ip_intelligence?.find(i => i.probable_infrastructure_location)?.probable_infrastructure_location || activeCaseDetail.analysis.ip_intelligence?.[0]?.probable_infrastructure_location}
-                      title="Case Infrastructure Location"
-                    />
                   </div>
                 )}
 
+                {/* 10. RELAY TIMELINE */}
+                {activeCaseDetail.analysis?.timeline && (
+                  <div className="card" style={{ background: '#ffffff', padding: '14px', border: '1px solid #e2e8f0' }}>
+                    <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Clock size={16} /> 10. SMTP Relay Timeline ({activeCaseDetail.analysis.timeline.length})
+                    </h4>
+                    {activeCaseDetail.analysis.timeline.length > 0 ? (
+                      <table className="data-table" style={{ fontSize: '12px' }}>
+                        <thead>
+                          <tr>
+                            <th>#</th>
+                            <th>Timestamp</th>
+                            <th>Source Host</th>
+                            <th>Destination Host</th>
+                            <th>IP Address</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {activeCaseDetail.analysis.timeline.map((evt, idx) => (
+                            <tr key={idx}>
+                              <td>{evt.sequence}</td>
+                              <td>{evt.timestamp || 'N/A'}</td>
+                              <td><code>{evt.source || 'N/A'}</code></td>
+                              <td><code>{evt.destination || 'N/A'}</code></td>
+                              <td><code>{evt.ip || 'N/A'}</code></td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    ) : (
+                      <p className="text-muted" style={{ margin: 0, fontSize: '13px' }}>No relay timeline events recorded.</p>
+                    )}
+                  </div>
+                )}
 
-                <div className="modal-actions" style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                {/* 11. BLOCKCHAIN EVIDENCE INTEGRITY */}
+                <BlockchainLedgerView caseId={activeCaseDetail.case_id} />
+
+                {/* MODAL ACTIONS */}
+                <div className="modal-actions" style={{ marginTop: '16px', display: 'flex', justifyContent: 'flex-end', gap: '8px', position: 'sticky', bottom: 0, background: '#ffffff', borderTop: '1px solid #e2e8f0', paddingTop: '12px' }}>
                   <a 
                     href={getPdfReportUrl(activeCaseDetail.case_id)} 
                     target="_blank" 
