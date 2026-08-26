@@ -1,18 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
 import InvestigateEmailPage from './pages/InvestigateEmailPage';
 import CasesPage from './pages/CasesPage';
 import ThreatIntelPage from './pages/ThreatIntelPage';
 import ReportsPage from './pages/ReportsPage';
+import AdminUserManagementPage from './pages/AdminUserManagementPage';
 import './App.css';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     return sessionStorage.getItem('email_forensics_auth') === 'true';
   });
+
+  const [authView, setAuthView] = useState('login'); // 'login' | 'register'
 
   const [currentUser, setCurrentUser] = useState(() => {
     const savedUser = sessionStorage.getItem('email_forensics_user');
@@ -33,6 +37,7 @@ export default function App() {
     sessionStorage.removeItem('email_forensics_user');
     setIsAuthenticated(false);
     setCurrentUser(null);
+    setAuthView('login');
   };
 
   const handleSelectCase = (caseObj) => {
@@ -47,14 +52,20 @@ export default function App() {
       case 'cases': return 'Investigative Cases';
       case 'threat-intel': return 'Threat Intelligence';
       case 'reports': return 'Forensic PDF Reports';
+      case 'admin-users': return 'User Management & Approvals';
       default: return 'Email Forensics Platform';
     }
   };
 
-  // If not authenticated, force Login page
+  // Unauthenticated view: Login or Register
   if (!isAuthenticated) {
-    return <LoginPage onLoginSuccess={handleLoginSuccess} />;
+    if (authView === 'register') {
+      return <RegisterPage onSwitchToLogin={() => setAuthView('login')} />;
+    }
+    return <LoginPage onLoginSuccess={handleLoginSuccess} onSwitchToRegister={() => setAuthView('register')} />;
   }
+
+  const isAdmin = currentUser?.role === 'ADMIN';
 
   return (
     <div className="app-layout">
@@ -62,6 +73,7 @@ export default function App() {
         currentPage={currentPage} 
         setCurrentPage={setCurrentPage} 
         onLogout={handleLogout}
+        currentUser={currentUser}
       />
       
       <div className="main-wrapper">
@@ -93,6 +105,18 @@ export default function App() {
 
           {currentPage === 'reports' && (
             <ReportsPage />
+          )}
+
+          {currentPage === 'admin-users' && (
+            isAdmin ? (
+              <AdminUserManagementPage currentUser={currentUser} />
+            ) : (
+              <div className="card">
+                <div className="alert alert-error">
+                  <strong>Unauthorized — Admin access required.</strong>
+                </div>
+              </div>
+            )
           )}
         </main>
       </div>

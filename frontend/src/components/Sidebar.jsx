@@ -5,10 +5,13 @@ import {
   Briefcase, 
   ShieldAlert, 
   FileText,
+  Users,
   LogOut
 } from 'lucide-react';
 
-export default function Sidebar({ currentPage, setCurrentPage, onLogout }) {
+export default function Sidebar({ currentPage, setCurrentPage, onLogout, currentUser }) {
+  const isAdmin = currentUser?.role === 'ADMIN';
+
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'investigate', label: 'Investigate Email', icon: Search },
@@ -16,6 +19,10 @@ export default function Sidebar({ currentPage, setCurrentPage, onLogout }) {
     { id: 'threat-intel', label: 'Threat Intelligence', icon: ShieldAlert },
     { id: 'reports', label: 'Reports', icon: FileText },
   ];
+
+  if (isAdmin) {
+    menuItems.push({ id: 'admin-users', label: 'User Management', icon: Users });
+  }
 
   return (
     <aside className="sidebar">
@@ -39,6 +46,7 @@ export default function Sidebar({ currentPage, setCurrentPage, onLogout }) {
             >
               <Icon size={18} />
               <span>{item.label}</span>
+              {item.id === 'admin-users' && <span className="tag-admin-pill">ADMIN</span>}
             </button>
           );
         })}

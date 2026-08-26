@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { getCases, getCaseDetails, getPdfReportUrl, deleteCase, deleteAllCases } from '../api';
 import Badge from '../components/Badge';
 import ThreatGraphView from '../components/ThreatGraphView';
+import GeoMap from '../components/GeoMap';
+
 import { Briefcase, RefreshCw, Eye, Download, X, AlertCircle, Trash2, CheckCircle2 } from 'lucide-react';
 
 export default function CasesPage({ selectedCaseFromNav }) {
@@ -272,8 +274,15 @@ export default function CasesPage({ selectedCaseFromNav }) {
                       ips={activeCaseDetail.analysis.ips}
                       ipIntelligence={activeCaseDetail.analysis.ip_intelligence}
                     />
+
+                    <h4 style={{ margin: '16px 0 8px 0' }}>Infrastructure GeoLocation Map:</h4>
+                    <GeoMap 
+                      locationData={activeCaseDetail.analysis.ip_intelligence?.find(i => i.probable_infrastructure_location)?.probable_infrastructure_location || activeCaseDetail.analysis.ip_intelligence?.[0]?.probable_infrastructure_location}
+                      title="Case Infrastructure Location"
+                    />
                   </div>
                 )}
+
 
                 <div className="modal-actions" style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
                   <a 

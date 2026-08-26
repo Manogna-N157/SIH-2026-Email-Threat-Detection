@@ -206,3 +206,29 @@ class CaseCreateRequest(BaseModel):
 
 class StoredCase(CaseCreateRequest):
     pass
+
+
+class UserRegisterRequest(BaseModel):
+    username: str
+    email: str
+    password: str
+
+
+class UserLoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+class UserResponse(BaseModel):
+    id: str
+    username: str
+    email: str
+    role: Literal["ADMIN", "USER"]
+    status: Literal["PENDING", "APPROVED", "REJECTED"]
+    created_at: str
+    token: str | None = None
+
+
+class UserStatusUpdateRequest(BaseModel):
+    status: Literal["APPROVED", "REJECTED", "PENDING"]
+

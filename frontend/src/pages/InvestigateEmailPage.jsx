@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { analyzeEmail, saveCase } from '../api';
 import Badge from '../components/Badge';
 import ThreatGraphView from '../components/ThreatGraphView';
+import GeoMap from '../components/GeoMap';
+
 import { 
   Upload, 
   FileCheck, 
@@ -402,15 +404,24 @@ export default function InvestigateEmailPage() {
 
           {/* SECTION G: IP INTELLIGENCE */}
           <div className="card result-card">
-            <h3><Network size={20} /> G. IP Intelligence</h3>
+            <h3><Network size={20} /> G. IP Intelligence & Infrastructure GeoLocation</h3>
             <h4 style={{ color: '#0f172a', margin: '4px 0 8px 0' }}>Probable Infrastructure Location</h4>
             <p className="disclaimer-text">
               * Notice: Network-associated location, not an assertion of a person's physical location.
             </p>
 
+            {/* Interactive Leaflet Map */}
+            <div style={{ margin: '16px 0' }}>
+              <GeoMap 
+                locationData={result.ip_intelligence?.find(i => i.probable_infrastructure_location)?.probable_infrastructure_location || result.ip_intelligence?.[0]?.probable_infrastructure_location} 
+                title="Forensic Infrastructure GeoLocation Map"
+              />
+            </div>
+
             {!result.ip_intelligence || result.ip_intelligence.length === 0 ? (
               <p className="text-muted">No public IP intelligence lookup available.</p>
             ) : (
+
               <table className="data-table">
                 <thead>
                   <tr>

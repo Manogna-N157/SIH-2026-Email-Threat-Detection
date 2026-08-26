@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
+import { loginUser } from '../api';
 import { ShieldAlert, Lock, User, LogIn, AlertCircle } from 'lucide-react';
 
-export default function LoginPage({ onLoginSuccess }) {
+export default function LoginPage({ onLoginSuccess, onSwitchToRegister }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -23,26 +24,16 @@ export default function LoginPage({ onLoginSuccess }) {
 
     setLoading(true);
 
-    // Simple demo authentication check for SIH prototype
-    setTimeout(() => {
-      // Allow demo credentials or any valid non-empty username/password
-      if (
-        (username.trim().toLowerCase() === 'admin' && password === 'admin123') ||
-        (username.trim().toLowerCase() === 'analyst@sih.gov.in' && password === 'sih2026') ||
-        (username.trim().length > 0 && password.length >= 4)
-      ) {
-        const userSession = {
-          username: username.trim(),
-          loginTime: new Date().toISOString(),
-        };
-        sessionStorage.setItem('email_forensics_auth', 'true');
-        sessionStorage.setItem('email_forensics_user', JSON.stringify(userSession));
-        onLoginSuccess(userSession);
-      } else {
-        setError('Invalid username or password. (Demo credentials: admin / admin123)');
-      }
+    try {
+      const userResponse = await loginUser(username.trim(), password);
+      sessionStorage.setItem('email_forensics_auth', 'true');
+      sessionStorage.setItem('email_forensics_user', JSON.stringify(userResponse));
+      onLoginSuccess(userResponse);
+    } catch (err) {
+      setError(err.message || 'Invalid credentials or login failure.');
+    } finally {
       setLoading(false);
-    }, 400);
+    }
   };
 
   return (
@@ -52,7 +43,7 @@ export default function LoginPage({ onLoginSuccess }) {
           <div className="login-logo">
             <ShieldAlert size={36} color="#2563eb" />
           </div>
-          <h2>Email Forensics Platform</h2>
+          <h2>Sign In</h2>
           <p className="subtitle">
             AI-Powered Email Threat Detection, GeoLocation and Forensic Intelligence Platform
           </p>
@@ -67,31 +58,33 @@ export default function LoginPage({ onLoginSuccess }) {
 
         <form onSubmit={handleSubmit} className="login-form">
           <div className="form-group">
-            <label htmlFor="username">Username or Email</label>
+            <label htmlFor="login-username">Username / Email</label>
             <div className="input-with-icon">
               <User size={18} className="input-icon" />
               <input
                 type="text"
-                id="username"
-                placeholder="Enter username (e.g. admin)"
+                id="login-username"
+                placeholder="Enter username or email"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 autoComplete="username"
+                disabled={loading}
               />
             </div>
           </div>
 
           <div className="form-group">
-            <label htmlFor="password">Password</label>
+            <label htmlFor="login-password">Password</label>
             <div className="input-with-icon">
               <Lock size={18} className="input-icon" />
               <input
                 type="password"
-                id="password"
-                placeholder="Enter password (e.g. admin123)"
+                id="login-password"
+                placeholder="Enter password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete="current-password"
+                disabled={loading}
               />
             </div>
           </div>
@@ -105,9 +98,16 @@ export default function LoginPage({ onLoginSuccess }) {
           </button>
         </form>
 
-        <div className="login-demo-tip">
-          <p><strong>SIH Prototype Demo Credentials:</strong></p>
-          <p>Username: <code>admin</code> | Password: <code>admin123</code></p>
+        <div className="login-switch-footer" style={{ marginTop: '20px', textAlign: 'center', fontSize: '13px' }}>
+          <span>Don't have an account? </span>
+          <button
+            type="button"
+            className="link-btn"
+            onClick={onSwitchToRegister}
+            style={{ background: 'none', border: 'none', color: '#2563eb', fontWeight: 600, cursor: 'pointer', textDecoration: 'underline' }}
+          >
+            Register
+          </button>
         </div>
       </div>
     </div>
