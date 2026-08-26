@@ -700,7 +700,7 @@ Additional test emails are available in the `dataset/` directory.
 | *Team Member 1* | *Manogna Nerella* |
 | *Team Member 2* | *Ananditha G* |
 | *Team Member 3* | *Isaac E* |
-| *Team Member 4* | *Nandakumar G * |
+| *Team Member 4* | *Nandakumar G* |
 | *Team Member 5* | *P Aakash* |
 | *Team Member 6* | *Mohamed Faizon* |
 
