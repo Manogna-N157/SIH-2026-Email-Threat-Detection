@@ -1,24 +1,19 @@
 import React, { useEffect, useState } from 'react';
+
 import {
   Mail,
   AlertTriangle,
   ShieldCheck,
   ArrowRight,
   RefreshCw,
+  Shield,
+  ShieldAlert,
+  CheckCircle,
 } from 'lucide-react';
+
 import Badge from '../components/Badge';
-import { Mail, AlertTriangle, ShieldCheck, ArrowRight, RefreshCw, Shield, ShieldAlert, CheckCircle } from 'lucide-react';
 
 const demoCases = [
-  {
-    case_id: 'CASE-001',
-    filename: 'invoice_payment.eml',
-    risk_score: 92,
-    risk_level: 'CRITICAL',
-    classification: 'PHISHING',
-    confidence: 96,
-    timestamp: '2026-08-26T10:32:00',
-  },
   {
     case_id: 'CASE-002',
     filename: 'account_verification.eml',
@@ -238,16 +233,16 @@ export default function DashboardPage({
                   <tr key={c.case_id}>
 
                     <td>
-                    <td>
                       <code>{c.case_id}</code>
                     </td>
+
                     <td>
                       {c.filename}
                     </td>
+
                     <td>
                       <span className={`risk-score-pill score-${c.risk_score >= 75 ? 'high' : c.risk_score >= 50 ? 'med' : 'low'}`}>
                         {c.risk_score ?? 'N/A'}/100
-                      </span>
                       </span>
                     </td>
 
