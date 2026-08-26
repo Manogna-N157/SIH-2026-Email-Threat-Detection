@@ -80,11 +80,17 @@ def generate_case_pdf(case: StoredCase) -> bytes:
     _notice(story, styles, "Infrastructure geolocation identifies probable network infrastructure, not an attacker's physical location.")
 
     _section(story, styles, "AI semantic analysis")
-    if analysis and analysis.ai_analysis.result:
+    if analysis and analysis.ai_analysis.available and analysis.ai_analysis.result:
         ai = analysis.ai_analysis.result
-        _table(story, [("Explanation", ai.explanation), ("Recommended action", ai.recommended_action), ("Threat categories", _join(ai.threat_categories))], styles)
+        _table(story, [
+            ("Classification", ai.classification),
+            ("Confidence", f"{ai.confidence}%"),
+            ("Explanation", ai.explanation),
+            ("Recommended action", ai.recommended_action),
+            ("Threat categories", _join(ai.threat_categories)),
+        ], styles)
     else:
-        _notice(story, styles, "AI semantic analysis was unavailable or was not stored with this case.")
+        _notice(story, styles, "AI semantic analysis unavailable for this case.")
 
     _section(story, styles, "Relay timeline")
     if analysis:

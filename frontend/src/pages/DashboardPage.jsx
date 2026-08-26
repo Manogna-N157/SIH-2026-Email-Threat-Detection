@@ -7,6 +7,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import Badge from '../components/Badge';
+import { Mail, AlertTriangle, ShieldCheck, ArrowRight, RefreshCw, Shield, ShieldAlert, CheckCircle } from 'lucide-react';
 
 const demoCases = [
   {
@@ -78,18 +79,27 @@ export default function DashboardPage({
     setCases(demoCases);
   }, []);
 
+  // Compute metric numbers strictly following backend risk_level rules:
   const totalAnalyzed = cases.length;
-
-  const highRiskCount = cases.filter((c) => {
-    const level = String(c.risk_level || '').toUpperCase();
-    return level === 'HIGH' || level === 'CRITICAL';
+  
+  const highRiskCount = cases.filter(c => {
+    const rawLevel = c.risk_level || c.analysis?.risk_level;
+    if (!rawLevel) return false;
+    const upper = String(rawLevel).trim().toUpperCase();
+    return upper === 'HIGH' || upper === 'CRITICAL';
   }).length;
 
-  const threatsDetected = cases.filter(
-    (c) =>
-      c.classification &&
-      c.classification.toUpperCase() !== 'LEGITIMATE'
-  ).length;
+  const mediumRiskCount = cases.filter(c => {
+    const rawLevel = c.risk_level || c.analysis?.risk_level;
+    if (!rawLevel) return false;
+    return String(rawLevel).trim().toUpperCase() === 'MEDIUM';
+  }).length;
+
+  const lowRiskCount = cases.filter(c => {
+    const rawLevel = c.risk_level || c.analysis?.risk_level;
+    if (!rawLevel) return false;
+    return String(rawLevel).trim().toUpperCase() === 'LOW';
+  }).length;
 
   const formatConfidence = (value) => {
     if (value === null || value === undefined) return 'N/A';
@@ -124,8 +134,9 @@ export default function DashboardPage({
         </div>
       </div>
 
-      {/* Dashboard Metrics */}
-      <div className="metrics-grid">
+
+      {/* Metrics Cards */}
+      <div className="metrics-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
 
         <div className="card metric-card">
           <div className="metric-icon blue">
@@ -133,45 +144,49 @@ export default function DashboardPage({
           </div>
 
           <div className="metric-info">
-            <span className="metric-label">
-              Emails Analyzed
-            </span>
+            <span className="metric-label">Total Cases</span>
+            <span className="metric-value">{loading ? '...' : totalAnalyzed}</span>
 
-            <span className="metric-value">
-              {loading ? '...' : totalAnalyzed}
-            </span>
           </div>
         </div>
 
         <div className="card metric-card">
           <div className="metric-icon red">
-            <AlertTriangle size={24} />
+            <ShieldAlert size={24} />
           </div>
 
           <div className="metric-info">
-            <span className="metric-label">
-              High Risk Cases
-            </span>
-
-            <span className="metric-value">
-              {loading ? '...' : highRiskCount}
-            </span>
+            <span className="metric-label">High Risk Cases (75-100)</span>
+            <span className="metric-value">{loading ? '...' : highRiskCount}</span>
           </div>
         </div>
 
         <div className="card metric-card">
           <div className="metric-icon orange">
-            <ShieldCheck size={24} />
+            <AlertTriangle size={24} />
           </div>
 
           <div className="metric-info">
-            <span className="metric-label">
-              Threats Detected
-            </span>
+                      <div className="card metric-card">
+            <div className="metric-icon orange">
+              <AlertTriangle size={24} />
+            </div>
+            <div className="metric-info">
+              <span className="metric-label">Medium Risk Cases (50-74)</span>
+              <span className="metric-value">{loading ? '...' : mediumRiskCount}</span>
+            </div>
+          </div>
 
-            <span className="metric-value">
-              {loading ? '...' : threatsDetected}
-            </span>
+          <div className="card metric-card">
+            <div className="metric-icon green" style={{ background: '#dcfce7', color: '#15803d' }}>
+              <CheckCircle size={24} />
+            </div>
+            <div className="metric-info">
+              <span className="metric-label">Low Risk Cases (0-49)</span>
+              <span className="metric-value">{loading ? '...' : lowRiskCount}</span>
+            </div>
+          </div>
+            
           </div>
         </div>
 
@@ -223,24 +238,16 @@ export default function DashboardPage({
                   <tr key={c.case_id}>
 
                     <td>
+                    <td>
                       <code>{c.case_id}</code>
                     </td>
-
                     <td>
                       {c.filename}
                     </td>
-
                     <td>
-                      <span
-                        className={`risk-score-pill score-${
-                          c.risk_score >= 70
-                            ? 'high'
-                            : c.risk_score >= 40
-                            ? 'med'
-                            : 'low'
-                        }`}
-                      >
-                        {c.risk_score}/100
+                      <span className={`risk-score-pill score-${c.risk_score >= 75 ? 'high' : c.risk_score >= 50 ? 'med' : 'low'}`}>
+                        {c.risk_score ?? 'N/A'}/100
+                      </span>
                       </span>
                     </td>
 

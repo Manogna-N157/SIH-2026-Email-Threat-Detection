@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { checkHealth } from '../api';
-import { LogOut, User } from 'lucide-react';
+import { LogOut, User, Shield } from 'lucide-react';
 
 export default function Header({ title, onLogout, currentUser }) {
   const [backendStatus, setBackendStatus] = useState('checking');
@@ -36,7 +36,10 @@ export default function Header({ title, onLogout, currentUser }) {
         {currentUser && (
           <div className="user-profile">
             <User size={16} />
-            <span>{currentUser.username || 'Analyst'}</span>
+            <span>Welcome, <strong>{currentUser.username}</strong></span>
+            <span className={`role-badge ${currentUser.role === 'ADMIN' ? 'role-admin' : 'role-user'}`}>
+              <Shield size={12} /> Role: {currentUser.role || 'USER'}
+            </span>
           </div>
         )}
 

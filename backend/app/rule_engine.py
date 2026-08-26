@@ -70,7 +70,10 @@ def _add_url_indicators(email: ParsedEmail, indicators: list[Indicator]) -> None
                 "Suspicious domain pattern", "medium", f"Found suspicious domain pattern(s): {', '.join(suspicious_domains)}.", 10
             )
         )
-    if suspicious_urls and CREDENTIAL_PATTERN.search(_content(email)):
+    suspicious_sender_domains = [
+        address.domain for address in email.from_ if address.domain and _is_suspicious_domain(address.domain)
+    ]
+    if suspicious_urls and suspicious_sender_domains and CREDENTIAL_PATTERN.search(_content(email)):
         indicators.append(
             make_indicator(
                 "Credential-harvesting link",

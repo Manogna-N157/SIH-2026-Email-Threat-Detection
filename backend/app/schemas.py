@@ -1,10 +1,11 @@
 from datetime import datetime, timezone
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class HealthResponse(BaseModel):
+
     status: str
 
 
@@ -167,7 +168,7 @@ class RelayTimelineEvent(BaseModel):
 class CompleteAnalyzeResponse(BaseModel):
     case_id: str
     risk_score: int = Field(ge=0, le=100)
-    risk_level: Literal["LOW", "MEDIUM", "HIGH", "CRITICAL"]
+    risk_level: Literal["LOW", "MEDIUM", "HIGH"]
     classification: Literal[
         "LEGITIMATE",
         "SUSPICIOUS",
@@ -189,12 +190,23 @@ class CompleteAnalyzeResponse(BaseModel):
     timeline: list[RelayTimelineEvent] = Field(default_factory=list)
     threat_graph: ThreatGraph
 
+    @model_validator(mode="after")
+    def _enforce_risk_level(self) -> CompleteAnalyzeResponse:
+        from app.risk_engine import get_risk_level
+
+        expected = get_risk_level(self.risk_score)
+        if self.risk_level != expected:
+            object.__setattr__(self, "risk_level", expected)
+        return self
+
+
 
 class CaseCreateRequest(BaseModel):
     case_id: str
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     filename: str
     risk_score: int = Field(ge=0, le=100)
+    risk_level: Literal["LOW", "MEDIUM", "HIGH"] = "LOW"
     classification: Literal[
         "LEGITIMATE", "SUSPICIOUS", "PHISHING", "IMPERSONATION", "BUSINESS_EMAIL_COMPROMISE", "MALWARE"
     ]
@@ -203,6 +215,58 @@ class CaseCreateRequest(BaseModel):
     indicators: list[Indicator] = Field(default_factory=list)
     analysis: CompleteAnalyzeResponse | None = None
 
+    @model_validator(mode="after")
+    def _enforce_risk_level(self) -> "CaseCreateRequest":
+        from app.risk_engine import get_risk_level
+
+        expected = get_risk_level(self.risk_score)
+        if self.risk_level != expected:
+            object.__setattr__(self, "risk_level", expected)
+        return self
+
 
 class StoredCase(CaseCreateRequest):
     pass
+
+
+class EvidenceBlock(BaseModel):
+    """A prototype append-only SHA-256 evidence-ledger block."""
+
+    index: int = Field(ge=0)
+    case_id: str
+    evidence_hash: str
+    timestamp: datetime
+    previous_hash: str
+    current_hash: str
+
+
+class EvidenceVerificationResponse(BaseModel):
+    case_id: str
+    verified: bool
+    message: str
+    block: EvidenceBlock | None = None
+
+
+class UserRegisterRequest(BaseModel):
+    username: str
+    email: str
+    password: str
+
+
+class UserLoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+class UserResponse(BaseModel):
+    id: str
+    username: str
+    email: str
+    role: Literal["ADMIN", "USER"]
+    status: Literal["PENDING", "APPROVED", "REJECTED"]
+    created_at: str
+    token: str | None = None
+
+
+class UserStatusUpdateRequest(BaseModel):
+    status: Literal["APPROVED", "REJECTED", "PENDING"]

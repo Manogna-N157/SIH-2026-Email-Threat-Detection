@@ -1,0 +1,19 @@
+From: notifications@account-service.com
+To: user@example.com
+Subject: Unusual Sign-In Activity
+Date: Wed, 26 Aug 2026 12:30:00 +0530
+Message-ID: <login-alert-7712@account-service.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="UTF-8"
+
+Hello,
+
+We detected a sign-in to your account from a new device.
+
+If this was not you, please review your recent activity:
+
+https://account-service.com/security
+
+No action is required if you recognize this activity.
+
+Account Security Team

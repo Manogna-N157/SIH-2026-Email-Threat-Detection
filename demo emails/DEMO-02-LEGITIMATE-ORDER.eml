@@ -1,0 +1,20 @@
+From: orders@example-store.com
+To: customer@example.com
+Subject: Order Confirmation #45678
+Date: Wed, 26 Aug 2026 11:30:00 +0530
+Message-ID: <order-45678@example-store.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="UTF-8"
+
+Hello,
+
+Thank you for your order.
+
+Order number: 45678
+Product: Wireless Keyboard
+Amount: INR 1,299
+
+Your order has been successfully placed and will be shipped soon.
+
+Thank you,
+Customer Support

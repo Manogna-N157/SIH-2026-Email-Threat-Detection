@@ -57,12 +57,12 @@ def test_high_risk_uploaded_email_uses_recovered_content_for_scoring() -> None:
         "Urgency/social engineering",
     }.issubset(names)
     assert assessment.risk_score >= 60
-    assert get_risk_level(assessment.risk_score) == "HIGH"
+    assert get_risk_level(assessment.risk_score) == "MEDIUM"
 
 
 @pytest.mark.parametrize(
     ("score", "expected_level"),
-    [(0, "LOW"), (29, "LOW"), (30, "MEDIUM"), (59, "MEDIUM"), (60, "HIGH"), (79, "HIGH"), (80, "CRITICAL"), (100, "CRITICAL")],
+    [(35, "LOW"), (49, "LOW"), (50, "MEDIUM"), (74, "MEDIUM"), (75, "HIGH"), (100, "HIGH")],
 )
 def test_risk_level_uses_only_final_numerical_score(score: int, expected_level: str) -> None:
     assert get_risk_level(score) == expected_level

@@ -4,14 +4,25 @@ import logging
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import Response
 
-from app import case_storage
+from app import case_storage, user_storage
 from app.analysis_pipeline import build_combined_result
 from app.ai.gemini_analyzer import analyze_with_gemini
 from app.email_parser import parse_eml
 from app.ip_intelligence import resolve_domain_intelligence, resolve_ip_intelligence
 from app.report_generator import generate_case_pdf
 from app.rule_engine import analyze_email_rules
-from app.schemas import CaseCreateRequest, CompleteAnalyzeResponse, HealthResponse, StoredCase
+from app.schemas import (
+    CaseCreateRequest,
+    CompleteAnalyzeResponse,
+    EvidenceBlock,
+    EvidenceVerificationResponse,
+    HealthResponse,
+    StoredCase,
+    UserLoginRequest,
+    UserRegisterRequest,
+    UserResponse,
+    UserStatusUpdateRequest,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -23,10 +34,79 @@ app = FastAPI(
 )
 
 
+@app.on_event("startup")
+async def startup_event():
+    """Initialize database tables and seed default admin account if needed."""
+    await asyncio.to_thread(user_storage.initialize_user_database)
+
+
 @app.get("/api/health", response_model=HealthResponse)
 async def health_check() -> HealthResponse:
     """Confirm that the API is available."""
     return HealthResponse(status="ok")
+
+
+@app.post("/api/auth/register", response_model=UserResponse, status_code=201)
+async def register_user(payload: UserRegisterRequest) -> UserResponse:
+    """Register a new user account (Status defaults to PENDING)."""
+    try:
+        user_data = await asyncio.to_thread(
+            user_storage.register_user, payload.username, payload.email, payload.password
+        )
+        return UserResponse(**user_data)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.post("/api/auth/login", response_model=UserResponse)
+async def login_user(payload: UserLoginRequest) -> UserResponse:
+    """Authenticate user credentials and check approval status."""
+    try:
+        user_data = await asyncio.to_thread(
+            user_storage.authenticate_user, payload.username, payload.password
+        )
+        return UserResponse(**user_data)
+    except PermissionError as exc:
+        raise HTTPException(status_code=401, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+
+
+@app.get("/api/admin/users", response_model=list[UserResponse])
+async def list_registered_users() -> list[UserResponse]:
+    """Admin endpoint to list all registered users."""
+    users = await asyncio.to_thread(user_storage.list_users)
+    return [UserResponse(**u) for u in users]
+
+
+@app.post("/api/admin/users/{user_id}/approve", response_model=UserResponse)
+async def approve_user(user_id: str) -> UserResponse:
+    """Admin endpoint to approve a user account."""
+    try:
+        user_data = await asyncio.to_thread(user_storage.update_user_status, user_id, "APPROVED")
+        return UserResponse(**user_data)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="User not found.") from exc
+
+
+@app.post("/api/admin/users/{user_id}/reject", response_model=UserResponse)
+async def reject_user(user_id: str) -> UserResponse:
+    """Admin endpoint to reject a user account."""
+    try:
+        user_data = await asyncio.to_thread(user_storage.update_user_status, user_id, "REJECTED")
+        return UserResponse(**user_data)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="User not found.") from exc
+
+
+@app.delete("/api/admin/users/{user_id}")
+async def delete_user(user_id: str):
+    """Admin endpoint to delete a user account."""
+    deleted = await asyncio.to_thread(user_storage.delete_user, user_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="User not found.")
+    return {"message": "User deleted successfully.", "user_id": user_id}
+
 
 
 @app.post("/api/analyze", response_model=CompleteAnalyzeResponse)
@@ -52,7 +132,12 @@ async def analyze_email(file: UploadFile = File(...)) -> CompleteAnalyzeResponse
         # as sender IPs. This is useful only when the EML exposes a domain/URL but
         # no IP evidence at all.
         ip_intelligence = await _resolve_dns_fallback(parsed_email.domains)
-    return build_combined_result(parsed_email, risk_assessment, semantic_analysis, ip_intelligence)
+    result = build_combined_result(parsed_email, risk_assessment, semantic_analysis, ip_intelligence)
+    # POST /api/cases may contain only summary fields from an existing client.
+    # Retain the completed structured response so its AI result is persisted
+    # with the matching case without changing that endpoint's request format.
+    case_storage.remember_analysis(result)
+    return result
 
 
 async def _resolve_dns_fallback(domains: list[str]):
@@ -89,6 +174,36 @@ async def get_stored_case(case_id: str) -> StoredCase:
     if case is None:
         raise HTTPException(status_code=404, detail="Case not found.")
     return case
+
+
+@app.get("/api/cases/{case_id}/blockchain/verify", response_model=EvidenceVerificationResponse)
+async def verify_case_blockchain_evidence(case_id: str) -> EvidenceVerificationResponse:
+    """Verify the stored case evidence fingerprint and chained ledger block."""
+    case, block, verified = await asyncio.to_thread(case_storage.verify_case_evidence, case_id)
+    if case is None:
+        raise HTTPException(status_code=404, detail="Case not found.")
+    if block is None:
+        return EvidenceVerificationResponse(
+            case_id=case_id,
+            verified=False,
+            message="No blockchain evidence record exists for this case.",
+        )
+    return EvidenceVerificationResponse(
+        case_id=case_id,
+        verified=verified,
+        message=(
+            "Evidence integrity verified. No tampering detected."
+            if verified
+            else "Evidence integrity check failed. Possible tampering detected."
+        ),
+        block=block,
+    )
+
+
+@app.get("/api/blockchain", response_model=list[EvidenceBlock])
+async def list_blockchain_ledger() -> list[EvidenceBlock]:
+    """Return the prototype chained evidence ledger in append order."""
+    return await asyncio.to_thread(case_storage.list_evidence_blocks)
 
 
 @app.delete("/api/cases/{case_id}")

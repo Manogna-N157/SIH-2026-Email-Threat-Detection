@@ -2,6 +2,10 @@ import React, { useState } from 'react';
 import { analyzeEmail, saveCase } from '../api';
 import Badge from '../components/Badge';
 import ThreatGraphView from '../components/ThreatGraphView';
+import GeoMap from '../components/GeoMap';
+import AISemanticAnalysisView from '../components/AISemanticAnalysisView';
+
+
 import { 
   Upload, 
   FileCheck, 
@@ -166,7 +170,7 @@ export default function InvestigateEmailPage() {
               <div className="risk-item">
                 <span className="risk-label">Risk Score</span>
                 <div className="risk-score-display">
-                  <span className={`large-score score-${result.risk_score >= 70 ? 'high' : result.risk_score >= 40 ? 'med' : 'low'}`}>
+                  <span className={`large-score score-${result.risk_score >= 75 ? 'high' : result.risk_score >= 50 ? 'med' : 'low'}`}>
                     {result.risk_score ?? 'N/A'}
                   </span>
                   <span className="score-max">/ 100</span>
@@ -318,53 +322,13 @@ export default function InvestigateEmailPage() {
             )}
           </div>
 
-          {/* SECTION E: AI ANALYSIS */}
-          <div className="card result-card">
-            <h3><Cpu size={20} /> E. AI Analysis (Backend Semantic Layer)</h3>
-            <p className="subtitle">
-              Response returned from backend API (No direct frontend Gemini API calls).
-            </p>
-
-            {!result.ai_analysis?.available ? (
-              <div className="alert alert-info">
-                AI semantic analysis layer was not active or turned off in backend. Rule-based analysis provided above.
-              </div>
-            ) : (
-              <div className="ai-analysis-box">
-                <div className="ai-grid">
-                  <div>
-                    <strong>AI Classification:</strong>{' '}
-                    <Badge type="classification" value={result.ai_analysis.result?.classification} />
-                  </div>
-                  <div>
-                    <strong>Confidence:</strong> {formatConfidence(result.ai_analysis.result?.confidence)}
-                  </div>
-                  <div>
-                    <strong>Recommended Action:</strong>{' '}
-                    <Badge type="action" value={result.ai_analysis.result?.recommended_action} />
-                  </div>
-                </div>
-
-                {result.ai_analysis.result?.threat_categories?.length > 0 && (
-                  <div style={{ marginTop: '12px' }}>
-                    <strong>Threat Categories:</strong>
-                    <div style={{ display: 'flex', gap: '6px', marginTop: '4px', flexWrap: 'wrap' }}>
-                      {result.ai_analysis.result.threat_categories.map((cat, idx) => (
-                        <span key={idx} className="tag">{cat}</span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {result.ai_analysis.result?.explanation && (
-                  <div style={{ marginTop: '12px' }}>
-                    <strong>Explanation:</strong>
-                    <p className="ai-explanation">{result.ai_analysis.result.explanation}</p>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+          {/* SECTION E: AI SEMANTIC ANALYSIS */}
+          <AISemanticAnalysisView 
+            analysisData={result} 
+            classification={result.classification} 
+            confidence={result.confidence} 
+            fallbackText="AI semantic analysis unavailable for this email."
+          />
 
           {/* SECTION F: URLS / DOMAINS / IPS */}
           <div className="card result-card">
@@ -402,15 +366,24 @@ export default function InvestigateEmailPage() {
 
           {/* SECTION G: IP INTELLIGENCE */}
           <div className="card result-card">
-            <h3><Network size={20} /> G. IP Intelligence</h3>
+            <h3><Network size={20} /> G. IP Intelligence & Infrastructure GeoLocation</h3>
             <h4 style={{ color: '#0f172a', margin: '4px 0 8px 0' }}>Probable Infrastructure Location</h4>
             <p className="disclaimer-text">
               * Notice: Network-associated location, not an assertion of a person's physical location.
             </p>
 
+            {/* Interactive Leaflet Map */}
+            <div style={{ margin: '16px 0' }}>
+              <GeoMap 
+                locationData={result.ip_intelligence?.find(i => i.probable_infrastructure_location)?.probable_infrastructure_location || result.ip_intelligence?.[0]?.probable_infrastructure_location} 
+                title="Forensic Infrastructure GeoLocation Map"
+              />
+            </div>
+
             {!result.ip_intelligence || result.ip_intelligence.length === 0 ? (
               <p className="text-muted">No public IP intelligence lookup available.</p>
             ) : (
+
               <table className="data-table">
                 <thead>
                   <tr>
