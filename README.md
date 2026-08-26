@@ -697,11 +697,12 @@ Additional test emails are available in the `dataset/` directory.
 
 | Role | Name |
 |------|------|
-| *Team Member 1* | *Add name* |
-| *Team Member 2* | *Add name* |
-| *Team Member 3* | *Add name* |
-| *Team Member 4* | *Add name* |
-| *Team Member 5* | *Add name* |
+| *Team Member 1* | *Manogna Nerella* |
+| *Team Member 2* | *Ananditha G* |
+| *Team Member 3* | *Isaac E* |
+| *Team Member 4* | *Nandakumar G * |
+| *Team Member 5* | *P Aakash* |
+| *Team Member 6* | *Mohamed Faizon* |
 
 > *Replace placeholders with actual team member information.*
 
